@@ -45,6 +45,6 @@
     "node-tectonic-darwin-x64": "1.0.0",
     "node-tectonic-linux-x64": "1.0.0",
     "node-tectonic-linux-arm64": "1.0.0",
-    "node-tectonic-win32-x64": "1.0.0"
+    "node-tectonic-windows-x64": "1.0.0"
   }
 }

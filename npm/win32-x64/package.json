@@ -1,7 +1,7 @@
 {
-  "name": "node-tectonic-win32-x64",
+  "name": "node-tectonic-windows-x64",
   "version": "1.0.0",
-  "description": "The win32-x64 tectonic binary for node-tectonic.",
+  "description": "The windows x64 tectonic binary for node-tectonic.",
   "license": "MIT",
   "os": [
     "win32"
