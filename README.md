@@ -91,7 +91,7 @@ Releasing (CI publishes on tag, needs an `NPM_TOKEN` repo secret):
 node scripts/set-version.js 1.0.1
 git commit -am "v1.0.1"
 git tag v1.0.1
-git push --follow-tags
+git push origin main v1.0.1
 ```
 
 The workflow publishes the platform packages before the root package, since
