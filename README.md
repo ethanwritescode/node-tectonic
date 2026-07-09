@@ -1,5 +1,7 @@
 # node-tectonic
 
+[![npm](https://img.shields.io/npm/v/node-tectonic)](https://www.npmjs.com/package/node-tectonic)
+
 Compile LaTeX to PDF from Node.js without installing TeX.
 
 This wraps the [Tectonic](https://tectonic-typesetting.github.io/) engine and
