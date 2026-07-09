@@ -1,3 +1,5 @@
+/// <reference types="node" />
+
 export interface RunResult {
   exitCode: number | null;
   signal: NodeJS.Signals | null;

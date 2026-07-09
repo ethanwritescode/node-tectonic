@@ -1,6 +1,6 @@
 {
   "name": "node-tectonic",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Tectonic LaTeX engine for Node.js. Compiles .tex to PDF with no system TeX installation.",
   "keywords": [
     "tectonic",
@@ -41,10 +41,10 @@
     "test": "node test/basic.js"
   },
   "optionalDependencies": {
-    "node-tectonic-darwin-arm64": "1.0.0",
-    "node-tectonic-darwin-x64": "1.0.0",
-    "node-tectonic-linux-x64": "1.0.0",
-    "node-tectonic-linux-arm64": "1.0.0",
-    "node-tectonic-windows-x64": "1.0.0"
+    "node-tectonic-darwin-arm64": "1.0.1",
+    "node-tectonic-darwin-x64": "1.0.1",
+    "node-tectonic-linux-x64": "1.0.1",
+    "node-tectonic-linux-arm64": "1.0.1",
+    "node-tectonic-windows-x64": "1.0.1"
   }
 }
