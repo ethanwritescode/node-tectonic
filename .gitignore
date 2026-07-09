@@ -1,0 +1,8 @@
+node_modules/
+dist/
+
+# fetched by scripts/fetch-binaries.js
+npm/*/bin/
+
+*.pdf
+*.log

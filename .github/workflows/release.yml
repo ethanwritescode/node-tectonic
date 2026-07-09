@@ -1,0 +1,66 @@
+name: release
+
+# Publishes the platform packages and then the root package when a version
+# tag is pushed. Needs an NPM_TOKEN automation token in the repo secrets.
+#
+#   node scripts/set-version.js 1.0.1
+#   git commit -am "v1.0.1" && git tag v1.0.1 && git push --follow-tags
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write # npm --provenance
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: https://registry.npmjs.org
+
+      - name: check tag against package version
+        if: github.event_name == 'push'
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          pkg="$(node -p "require('./package.json').version")"
+          if [ "$tag" != "$pkg" ]; then
+            echo "tag v$tag != package.json $pkg; run scripts/set-version.js first" >&2
+            exit 1
+          fi
+
+      - name: fetch binaries
+        run: node scripts/fetch-binaries.js
+
+      - name: test
+        run: npm test
+
+      - name: publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          set -euo pipefail
+          publish() {
+            local name version
+            name="$(node -p "require('./$1/package.json').name")"
+            version="$(node -p "require('./$1/package.json').version")"
+            if npm view "$name@$version" version >/dev/null 2>&1; then
+              echo "$name@$version already published, skipping"
+            else
+              (cd "$1" && npm publish --provenance --access public)
+            fi
+          }
+          # Platform packages go first: the root's optionalDependencies point
+          # at them, so they have to exist before the root is installable.
+          for p in darwin-arm64 darwin-x64 linux-x64 linux-arm64 win32-x64; do
+            publish "npm/$p"
+          done
+          publish "."

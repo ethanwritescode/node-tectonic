@@ -1,0 +1,21 @@
+{
+  "name": "node-tectonic-linux-arm64",
+  "version": "1.0.0",
+  "description": "The linux-arm64 tectonic binary for node-tectonic.",
+  "license": "MIT",
+  "os": [
+    "linux"
+  ],
+  "cpu": [
+    "arm64"
+  ],
+  "files": [
+    "bin/"
+  ],
+  "preferUnplugged": true,
+  "author": "Ethan James <etjames2023@gmail.com> (https://github.com/ethanwritescode)",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ethanwritescode/node-tectonic.git"
+  }
+}
