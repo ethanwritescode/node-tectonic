@@ -41,7 +41,9 @@ jobs:
         run: node scripts/fetch-binaries.js
 
       - name: test
-        run: npm test
+        run: |
+          npm test
+          npm run test:integration
 
       - name: publish
         env:
