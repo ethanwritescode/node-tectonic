@@ -1,6 +1,6 @@
 {
   "name": "node-tectonic-darwin-x64",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "The darwin-x64 tectonic binary for node-tectonic.",
   "license": "MIT",
   "os": [
@@ -9,7 +9,10 @@
   "cpu": [
     "x64"
   ],
+  "main": "index.js",
+  "exports": "./index.js",
   "files": [
+    "index.js",
     "bin/"
   ],
   "preferUnplugged": true,

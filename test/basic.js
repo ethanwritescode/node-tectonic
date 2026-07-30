@@ -19,8 +19,24 @@ async function main() {
   const result = await compile({ tex, returnBuffer: true });
 
   assert.strictEqual(result.success, true, `compile failed:\n${result.stderr}`);
+  assert.strictEqual(result.failure, null);
+  assert.strictEqual(result.signal, null);
+  assert.strictEqual(result.timedOut, false);
   assert.ok(result.pdfBuffer, "no pdfBuffer");
   assert.strictEqual(result.pdfBuffer.slice(0, 5).toString("latin1"), "%PDF-");
+
+  const cached = await compile({
+    tex,
+    returnBuffer: true,
+    onlyCached: true,
+    untrusted: true,
+  });
+  assert.strictEqual(
+    cached.success,
+    true,
+    `cached untrusted compile failed:\n${cached.stderr}`
+  );
+  assert.strictEqual(cached.failure, null);
 
   console.log(`ok, ${result.pdfBuffer.length} byte pdf`);
 }

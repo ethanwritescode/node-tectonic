@@ -5,7 +5,12 @@ const os = require("os");
 const path = require("path");
 const { spawn } = require("child_process");
 
-const { resolveBinaryPath } = require("./lib/binary");
+const {
+  platformPackageName,
+  resolveBinaryPath,
+} = require("./lib/binary");
+const { buildCompileArguments } = require("./lib/arguments");
+const { diagnoseCompileFailure } = require("./lib/diagnostics");
 const { TECTONIC_VERSION } = require("./lib/platforms");
 
 function binaryPath() {
@@ -17,15 +22,37 @@ function binaryPath() {
  * output whatever the exit code; rejects only if the process fails to spawn.
  */
 function run(args, options = {}) {
+  if (!Array.isArray(args) || args.some((arg) => typeof arg !== "string")) {
+    throw new TypeError("run() requires an array of string arguments.");
+  }
+  if (
+    options.timeout != null &&
+    (!Number.isFinite(options.timeout) || options.timeout <= 0)
+  ) {
+    throw new TypeError("`timeout` must be a positive number of milliseconds.");
+  }
+
   const bin = resolveBinaryPath();
   return new Promise((resolve, reject) => {
     const child = spawn(bin, args, {
       cwd: options.cwd,
-      timeout: options.timeout,
+      env: options.env,
+      killSignal: options.killSignal,
+      windowsHide: options.windowsHide !== false,
     });
 
     let stdout = "";
     let stderr = "";
+    let settled = false;
+    let timedOut = false;
+    let timeoutId = null;
+
+    if (options.timeout != null) {
+      timeoutId = setTimeout(() => {
+        timedOut = child.kill(options.killSignal || "SIGTERM");
+      }, options.timeout);
+      timeoutId.unref();
+    }
 
     child.stdout.on("data", (d) => {
       const s = d.toString();
@@ -38,9 +65,23 @@ function run(args, options = {}) {
       if (options.onStderr) options.onStderr(s);
     });
 
-    child.on("error", reject);
+    child.on("error", (error) => {
+      if (settled) return;
+      settled = true;
+      if (timeoutId) clearTimeout(timeoutId);
+      reject(error);
+    });
     child.on("close", (code, signal) => {
-      resolve({ exitCode: code, signal, stdout, stderr });
+      if (settled) return;
+      settled = true;
+      if (timeoutId) clearTimeout(timeoutId);
+      resolve({
+        exitCode: code,
+        signal,
+        timedOut,
+        stdout,
+        stderr,
+      });
     });
 
     // Close stdin so a document that reads from the terminal errors out
@@ -57,6 +98,19 @@ async function compile(config = {}) {
   const { tex, texFile } = config;
   if ((tex == null) === (texFile == null)) {
     throw new Error("compile() requires exactly one of `tex` or `texFile`.");
+  }
+  if (tex != null && typeof tex !== "string" && !Buffer.isBuffer(tex)) {
+    throw new TypeError("`tex` must be a string or Buffer.");
+  }
+  if (texFile != null && typeof texFile !== "string") {
+    throw new TypeError("`texFile` must be a path string.");
+  }
+  if (
+    config.args != null &&
+    (!Array.isArray(config.args) ||
+      config.args.some((arg) => typeof arg !== "string"))
+  ) {
+    throw new TypeError("`args` must be an array of strings.");
   }
 
   const cleanup = new Set();
@@ -91,18 +145,23 @@ async function compile(config = {}) {
 
     fs.mkdirSync(outputDir, { recursive: true });
 
-    const result = await run(
-      [inputPath, "--outdir", outputDir, ...(config.args || [])],
-      {
-        timeout: config.timeout,
-        onStdout: config.onStdout,
-        onStderr: config.onStderr,
-      }
-    );
+    const args = buildCompileArguments(inputPath, outputDir, config);
+
+    const result = await run(args, {
+      cwd: config.cwd,
+      env: config.env,
+      killSignal: config.killSignal,
+      timeout: config.timeout,
+      windowsHide: config.windowsHide,
+      onStdout: config.onStdout,
+      onStderr: config.onStderr,
+    });
 
     const base = path.basename(inputPath, path.extname(inputPath));
     const pdfPath = path.join(outputDir, `${base}.pdf`);
-    const success = result.exitCode === 0 && fs.existsSync(pdfPath);
+    const pdfExists = fs.existsSync(pdfPath);
+    const success = result.exitCode === 0 && pdfExists;
+    const failure = diagnoseCompileFailure(result, pdfExists);
 
     let pdfBuffer = null;
     if (success && config.returnBuffer) {
@@ -115,6 +174,9 @@ async function compile(config = {}) {
     return {
       success,
       exitCode: result.exitCode,
+      signal: result.signal,
+      timedOut: result.timedOut,
+      failure,
       pdfPath: pdfPersists ? pdfPath : null,
       pdfBuffer,
       stdout: result.stdout,
@@ -131,5 +193,6 @@ module.exports = {
   compile,
   run,
   binaryPath,
+  platformPackageName,
   tectonicVersion: TECTONIC_VERSION,
 };
